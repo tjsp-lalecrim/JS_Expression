@@ -1,0 +1,120 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #4285F4;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    width: 360px;
+    height: 360px;
+    padding-top: 30px;
+    border-radius: 10px;
+}
+
+.wrapper .expression {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 260px;
+    height: 40px;
+    font-size: 32px;
+    margin-bottom: 10px;
+    background: #ccc;
+    border-radius: 10px;
+}
+
+.wrapper .options {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.options button {
+    text-align: center;
+    width: 120px;
+    height: 60px;
+    margin: 10px;
+    font-size: 32px;
+    outline: none;
+    border: 1px solid #4285F4;
+    border-radius: 10px;
+}
+
+.options button.choiced {
+    color: #4285F4;
+}
+
+.wrapper .answer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 260px;
+    height: 60px;
+    font-size: 32px;
+}
+
+.answer{
+    margin-bottom: 10px;
+}
+
+.answer.hide {
+    display: none;
+}
+
+.answer.right {
+    background: greenyellow;
+}
+
+
+.answer.wrong {
+    background: red;
+}
+
+.refresh-btn {
+    text-align: center;
+    width: 120px;
+    height: 60px;
+    margin: 10px;
+    font-size: 32px;
+    outline: none;
+    border: 1px solid #4285F4;
+    border-radius: 10px;
+}
+
+.info{
+    width: 90%;
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.info div{
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    border: 1px solid black;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 5px;
+}
+
+.points, .time{
+    font-size: 32px;
+}
+
+.points span, .time span{
+    margin-right: 10px;
+}
