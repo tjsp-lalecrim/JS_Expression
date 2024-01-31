@@ -1,236 +1,154 @@
 // DOM Elements
-const elExpression = document.querySelector('.expression');
-const elOptions = document.querySelector('.options');
-const elAnswer = document.querySelector('.answer');
-const elPoints = document.querySelector('.points span');
-const elTime = document.querySelector('.time span');
+const elements = {
+    expression: document.querySelector('.expression'),
+    options: document.querySelector('.options'),
+    answer: document.querySelector('.answer'),
+    points: document.querySelector('.points span'),
+    time: document.querySelector('.time span')
+};
 
+// Constants
+const OPERATORS = ['*', '/', '+', '-'];
+const NUM_OPERATORS = 2;
+const TIMEOUT_DURATION = 2500;
+const CLOCK_INTERVAL = 1000;
+const ANSWER_POINTS = {
+    correct: NUM_OPERATORS * 100,
+    incorrect: NUM_OPERATORS * 25,
+    timeUp: NUM_OPERATORS * 50
+};
 
-// Global Variables
-const operators = ['*', '/', '+', '-'];
-let numOperators = 2, expression, result, answer, options, points = 0, timeToAnswer = null, clock = 10;
+let rightAnswer = null;
+let points = 0;
+let clock = 10;
+let timeToAnswer = null;
 
+// Utility Functions
+const getRandomOperator = arr => arr[Math.floor(Math.random() * arr.length)];
+const getRandomNumber = () => Math.floor(Math.random() * 10) + 1;
+const joinElements = arr => arr.join(' ');
+const randomSort = arr => arr.slice().sort(() => Math.random() - 0.5);
 
-// Function to get a random operator from an array
-function getRandomOperator(arr) {
-    const index = Math.floor(Math.random() * arr.length);
-    return arr[index];
-}
-
-// Function to get a random integer between 1 and 10
-function getRandomNumber() {
-    return Math.floor(Math.random() * 10) + 1;
-}
-
-// Function to get a random expression with a specified number of operators
-function getRandomExpression(numOperators) {
-    let expression = [];
-
+// Expression Functions
+const getRandomExpression = numOperators => {
+    const expression = [];
     for (let i = 0; i < numOperators; i++) {
-        expression.push(
-            getRandomNumber(),
-            getRandomOperator(operators),
-        );
-
-        if (i === numOperators - 1) {
-            expression.push(getRandomNumber());
-        }
+        expression.push(getRandomNumber(), getRandomOperator(OPERATORS));
     }
-
+    expression.push(getRandomNumber());
     return expression;
-}
+};
 
-// Function to join elements of an array with a space
-function joinElements(arr) {
-    return arr.join(' ');
-}
-
-// Function to get all operators in the expression
-function getAllOperators(expression) {
-    return expression.filter(el => operators.some(op => op === el)).join(' ');
-}
-
-// Function to get the expression with operators replaced by '?'
-function getHiddenExpression(expression) {
-    const hiddenExpression = expression.map(element =>
-        operators.includes(element) ? '?' : element
-    );
-    return joinElements(hiddenExpression);
-}
-
-// Function to find the next operator to be calculated
-function findNextOperator(expression) {
-    if (expression.some(e => e === '^')) {
-        return expression.findIndex(e => e === '^');
-    }
-
-    if (expression.some(e => e === '*' || e === '/')) {
-        return expression.findIndex(e => e === '*' || e === '/');
-    }
-
-    if (expression.some(e => e === '+' || e === '-')) {
-        return expression.findIndex(e => e === '+' || e === '-');
-    }
-
-    return -1;
-}
-
-// Function to calculate a specific operator
-function resolveOperator(x, operator, y) {
-    if (!x || !operator || !y) return null;
-
-    switch (operator) {
-        case '^':
-            return Math.pow(x, y);
-        case '*':
-            return x * y;
-        case '/':
-            return x / y;
-        case '+':
-            return x + y;
-        case '-':
-            return x - y;
-        default:
-            return NaN; // Handle unsupported operators
-    }
-}
-
-// Function to resolve a part of the expression
-function resolvePartial(expression) {
-    let i = findNextOperator(expression);
-    let partial = resolveOperator(expression[i - 1], expression[i], expression[i + 1]);
-    expression[i - 1] = partial;
-    expression[i] = expression[i + 1] = null;
-    return expression.filter(j => j !== null);
-}
-
-// Function to resolve the complete expression
-function resolveExpression(expression) {
+const resolveExpression = expression => {
     let result = [...expression];
-
     while (result.length > 1) {
-        result = resolvePartial(result);
+        const index = result.findIndex(e => OPERATORS.includes(e));
+        const partial = resolveOperator(result[index - 1], result[index], result[index + 1]);
+        result.splice(index - 1, 3, partial);
     }
-
     return result[0] ?? 0;
-}
+};
 
-// Function to get a random option
-function getOption(quantity) {
-    let randomOperators = [];
-    for (let i = 0; i < quantity; i++) {
-        randomOperators.push(getRandomOperator(operators));
+const resolveOperator = (x, operator, y) => {
+    switch (operator) {
+        case '^': return Math.pow(x, y);
+        case '*': return x * y;
+        case '/': return x / y;
+        case '+': return x + y;
+        case '-': return x - y;
+        default: return NaN;
     }
+};
 
-    return randomOperators.join(' ');
-}
+// Option Functions
+const getOption = quantity => Array.from({ length: quantity }, () => getRandomOperator(OPERATORS)).join(' ');
 
-// Function to get all options
-function getAllOptions(numOperators, answer) {
-    let options = [];
-    options.push(answer);
-
+const getAllOptions = (numOperators, answer) => {
+    const options = [answer];
     while (options.length < 4) {
-        let fakeOption = getOption(numOperators);
-
-        if (!options.some(o => o === fakeOption)) {
+        const fakeOption = getOption(numOperators);
+        if (!options.includes(fakeOption)) {
             options.push(fakeOption);
         }
     }
     return randomSort(options);
-}
+};
 
-// Function to shuffle an array randomly
-function randomSort(arr) {
-    const shuffledArray = arr.slice();
-
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+// Event Handlers
+const checkOption = option => {
+    clearInterval(timeToAnswer);
+    elements.answer.classList.remove('hide');
+    if (option === rightAnswer) {
+        elements.answer.classList.add('right');
+        elements.answer.classList.remove('wrong');
+        points += ANSWER_POINTS.correct;
+    } else {
+        elements.answer.classList.add('wrong');
+        elements.answer.classList.remove('right');
+        points -= ANSWER_POINTS.incorrect;
     }
+    elements.points.textContent = points;
+    disableOptions();
+    setTimeout(refreshExpression, TIMEOUT_DURATION);
+};
 
-    return shuffledArray;
-}
+const timeUp = () => {
+    points -= ANSWER_POINTS.timeUp;
+    elements.points.textContent = points;
+    clock = 10;
+    elements.time.innerText = clock;
+    refreshExpression();
+};
 
-// Function to create a button element with an option for the expression
-function createElOption(option) {
-    let elOption = document.createElement('button');
+// Timer Functions
+const updateClock = () => {
+    if (clock > 0) {
+        clock--;
+        elements.time.innerText = clock;
+    } else {
+        timeUp();
+    }
+};
+
+// Initialization
+const createElOption = option => {
+    const elOption = document.createElement('button');
     elOption.id = option;
     elOption.textContent = option;
     elOption.addEventListener('click', () => checkOption(option));
     return elOption;
-}
+};
 
-// Function to check the selected option against the correct answer
-function checkOption(option) {
-    clearInterval(timeToAnswer);
-
-    elAnswer.classList.remove('hide');
-
-    if (option === answer) {
-        elAnswer.classList.add('right');
-        elAnswer.classList.remove('wrong');
-        points += numOperators * 100;
-    } else {
-        elAnswer.classList.add('wrong');
-        elAnswer.classList.remove('right');
-        points -= numOperators * 25;
-    }
-
-    elPoints.textContent = points;
-    const optionsList = elOptions.querySelectorAll('button');
+const disableOptions = () => {
+    const optionsList = elements.options.querySelectorAll('button');
     optionsList.forEach(option => option.disabled = true);
+};
 
-    setTimeout(refreshExpression, 2500);
-}
-
-// Function to refresh the expression
-function refreshExpression() {
+const refreshExpression = () => {
     clearInterval(timeToAnswer);
     clock = 10;
+    elements.time.innerText = clock;
+    elements.options.innerHTML = '';
+    elements.answer.classList.add('hide');
 
-    expression = result = answer = options = null;
+    let expression, result, answer, options;
 
-    elOptions.innerHTML = '';
-    elAnswer.classList.add('hide');
+    do {
+        expression = getRandomExpression(NUM_OPERATORS);
+        result = resolveExpression(expression);
+    } while (!Number.isInteger(result));
 
-    while (!Number.isInteger(result)) {
-        expression = getRandomExpression(numOperators);
-        result = Number.parseFloat(resolveExpression(expression));
-    }
+    rightAnswer = expression.filter(el => OPERATORS.includes(el)).join(' ');
+    options = getAllOptions(NUM_OPERATORS, rightAnswer);
 
-    answer = getAllOperators(expression);
-    options = getAllOptions(numOperators, answer);
-
-    elExpression.textContent = `${getHiddenExpression(expression)} = ${result}`;
+    elements.expression.textContent = `${expression.join(' ')} = ${result}`;
     options.forEach(op => {
-        elOptions.append(createElOption(op));
+        elements.options.append(createElOption(op));
     });
+    elements.answer.textContent = expression.join(' ');
 
-    elAnswer.textContent = `${joinElements(expression)}`;
-
-    timeToAnswer = setInterval(updateClock, 1000);
-}
-
-function updateClock() {
-    if (clock > 0) {
-        clock--;
-        elTime.innerText = clock;
-    } else{
-        timeUp();
-    }
-}
-
-function timeUp() {
-    points -= numOperators * 50;
-    elPoints.textContent = points;
-    
-    clock = 10;
-    elTime.innerText = clock;
-    
-    refreshExpression();
-}
+    timeToAnswer = setInterval(updateClock, CLOCK_INTERVAL);
+};
 
 // Initial expression refresh
 refreshExpression();
-
